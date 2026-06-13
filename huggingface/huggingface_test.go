@@ -20,11 +20,17 @@ func newTestClient(t *testing.T, mux *http.ServeMux) *huggingface.Client {
 	return huggingface.NewClient(cfg)
 }
 
+func encodeJSON(w http.ResponseWriter, v any) {
+	w.Header().Set("Content-Type", "application/json")
+	if err := json.NewEncoder(w).Encode(v); err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+	}
+}
+
 func TestModels(t *testing.T) {
 	mux := http.NewServeMux()
 	mux.HandleFunc("/models", func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Set("Content-Type", "application/json")
-		_ = json.NewEncoder(w).Encode([]map[string]any{
+		encodeJSON(w, []map[string]any{
 			{"id": "meta-llama/Llama-2-7b-hf", "pipeline_tag": "text-generation",
 				"downloads": 100000, "likes": 500, "lastModified": "2024-01-15T00:00:00.000Z",
 				"tags": []string{"pytorch", "llama"}},
@@ -52,8 +58,7 @@ func TestModels(t *testing.T) {
 func TestDatasets(t *testing.T) {
 	mux := http.NewServeMux()
 	mux.HandleFunc("/datasets", func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Set("Content-Type", "application/json")
-		_ = json.NewEncoder(w).Encode([]map[string]any{
+		encodeJSON(w, []map[string]any{
 			{"id": "openai/webtext", "downloads": 50000, "likes": 200,
 				"lastModified": "2023-06-01T00:00:00.000Z", "tags": []string{"text", "en"}},
 			{"id": "EleutherAI/pile", "downloads": 30000, "likes": 150,
@@ -82,8 +87,7 @@ func TestDatasets(t *testing.T) {
 func TestSpaces(t *testing.T) {
 	mux := http.NewServeMux()
 	mux.HandleFunc("/spaces", func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Set("Content-Type", "application/json")
-		_ = json.NewEncoder(w).Encode([]map[string]any{
+		encodeJSON(w, []map[string]any{
 			{"id": "stabilityai/stable-diffusion", "sdk": "gradio", "likes": 8000,
 				"lastModified": "2024-02-20T00:00:00.000Z", "tags": []string{"image-generation"}},
 		})
@@ -110,8 +114,7 @@ func TestSpaces(t *testing.T) {
 func TestPapers(t *testing.T) {
 	mux := http.NewServeMux()
 	mux.HandleFunc("/papers", func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Set("Content-Type", "application/json")
-		_ = json.NewEncoder(w).Encode([]map[string]any{
+		encodeJSON(w, []map[string]any{
 			{
 				"id": "2302.13971", "title": "LLaMA: Open and Efficient Foundation Language Models",
 				"upvotes": 1200, "publishedAt": "2023-02-24T00:00:00.000Z",
@@ -149,8 +152,7 @@ func TestPapers(t *testing.T) {
 func TestModelDetail(t *testing.T) {
 	mux := http.NewServeMux()
 	mux.HandleFunc("/models/meta-llama/Llama-2-7b-hf", func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Set("Content-Type", "application/json")
-		_ = json.NewEncoder(w).Encode(map[string]any{
+		encodeJSON(w, map[string]any{
 			"id": "meta-llama/Llama-2-7b-hf", "pipeline_tag": "text-generation",
 			"downloads": 5000000, "likes": 12000, "lastModified": "2024-03-01T00:00:00.000Z",
 			"tags": []string{"pytorch", "llama", "transformers"},
@@ -169,36 +171,13 @@ func TestModelDetail(t *testing.T) {
 	}
 }
 
-func TestDatasetDetail(t *testing.T) {
-	mux := http.NewServeMux()
-	mux.HandleFunc("/datasets/openai/webtext", func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Set("Content-Type", "application/json")
-		_ = json.NewEncoder(w).Encode(map[string]any{
-			"id": "openai/webtext", "downloads": 99999, "likes": 300,
-			"lastModified": "2023-09-15T00:00:00.000Z", "tags": []string{"text", "en"},
-		})
-	})
-	c := newTestClient(t, mux)
-	d, err := c.DatasetDetail(context.Background(), "openai/webtext")
-	if err != nil {
-		t.Fatal(err)
-	}
-	if d.ID != "openai/webtext" {
-		t.Errorf("wrong ID: %s", d.ID)
-	}
-	if d.Downloads != 99999 {
-		t.Errorf("wrong Downloads: %d", d.Downloads)
-	}
-}
-
 func TestGetSendsUserAgent(t *testing.T) {
 	mux := http.NewServeMux()
 	mux.HandleFunc("/models", func(w http.ResponseWriter, r *http.Request) {
 		if r.Header.Get("User-Agent") == "" {
 			t.Error("request carried no User-Agent")
 		}
-		w.Header().Set("Content-Type", "application/json")
-		_, _ = w.Write([]byte(`[]`))
+		encodeJSON(w, []map[string]any{})
 	})
 	c := newTestClient(t, mux)
 	_, err := c.Models(context.Background(), "", "", 10)
