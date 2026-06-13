@@ -1,0 +1,10 @@
+title       = "hf"
+baseURL     = "https://huggingface-cli.tamnd.com/"
+description = "Browse Hugging Face Hub models, datasets, and spaces"
+contentDir  = "content"
+outputDir   = "public"
+theme       = "tago-doks"
+syntaxHighlight = "true"
+
+[params]
+github = "https://github.com/tamnd/huggingface-cli"
